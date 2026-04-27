@@ -1,5 +1,7 @@
 # Med RAG Grad
 
+医疗问答 RAG 系统，FastAPI, ChromaDB, Vue 3，毕设用。
+
 Medical Q&A RAG application with a FastAPI backend and Vue frontend. The backend retrieves relevant healthcare Q&A examples from a local ChromaDB vector store, then sends the retrieved context to an OpenAI-compatible chat API. The frontend provides the chat UI, API key setup, references, and monitoring panels.
 
 ## Project Layout
