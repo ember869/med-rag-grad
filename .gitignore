@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Node / Vue
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local assistant/workspace metadata
+.claude/
+.codex
+
+# Backend runtime assets that are too large for Git
+rag-backend/*-v1.5/
+rag-backend/vector_store/
+rag-backend/healthcaremagic/
+
+# Generated evaluation/runtime outputs
+rag-backend/healthcaremagicR/*
+!rag-backend/healthcaremagicR/
+!rag-backend/healthcaremagicR/generated_queries300.json
+
+# Large model artifacts, in case they are placed outside ignored model dirs
+*.onnx
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.pickle
+*.sqlite3
