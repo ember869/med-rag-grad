@@ -5,10 +5,8 @@
         v-if="visible"
         class="modal-backdrop"
         @click.self="$emit('close')"
-        @keydown.escape="$emit('close')"
-        tabindex="-1"
       >
-        <div class="api-key-modal">
+        <div class="api-key-modal" role="dialog" aria-modal="true">
           <div class="modal-header">
             <p class="eyebrow">模型访问</p>
             <h2>{{ mode === 'manage' ? '管理 API Key' : '输入 API Key' }}</h2>
@@ -129,7 +127,7 @@ export default {
     },
     maskedKey() {
       if (!this.configured) return '';
-      return this.keyInput || '••••••••';
+      return '••••••••';
     },
   },
   watch: {
@@ -173,13 +171,17 @@ export default {
       this.$emit('remove');
       this.showEditor = false;
     },
+    onKeydown(event) {
+      if (event.key === 'Escape' && this.visible) {
+        this.$emit('close');
+      }
+    },
   },
   mounted() {
-    if (this.visible) {
-      this.$nextTick(() => {
-        this.$refs.keyInput?.focus();
-      });
-    }
+    document.addEventListener('keydown', this.onKeydown);
+  },
+  beforeUnmount() {
+    document.removeEventListener('keydown', this.onKeydown);
   },
 };
 </script>
@@ -200,9 +202,9 @@ export default {
   gap: 16px;
   width: min(440px, 100%);
   padding: 22px;
-  border: 1px solid #e4e8ef;
-  border-radius: 8px;
-  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
   box-shadow: 0 22px 60px rgba(15, 23, 42, 0.22);
 }
 
@@ -218,14 +220,14 @@ export default {
 }
 
 .modal-copy {
-  color: #667085;
+  color: var(--muted);
   font-size: 14px;
   line-height: 1.6;
 }
 
 .eyebrow {
   margin-bottom: 4px;
-  color: #667085;
+  color: var(--muted);
   font-size: 12px;
   font-weight: 700;
 }
@@ -235,13 +237,13 @@ export default {
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border: 1px solid #e4e8ef;
-  border-radius: 8px;
-  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
 }
 
 .key-info-label {
-  color: #667085;
+  color: var(--muted);
   font-size: 12px;
 }
 
@@ -254,7 +256,7 @@ export default {
 .api-key-field {
   display: grid;
   gap: 8px;
-  color: #667085;
+  color: var(--muted);
   font-size: 13px;
   font-weight: 700;
 }
@@ -268,13 +270,13 @@ export default {
 .input-wrap input {
   width: 100%;
   min-height: 46px;
-  border: 1px solid #cfd7e3;
-  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
   padding: 12px 40px 12px 13px;
-  color: #172033;
-  background: #ffffff;
+  color: var(--text);
+  background: var(--surface);
   outline: none;
-  transition: border-color 160ms ease;
+  transition: border-color 160ms var(--ease);
 }
 
 .input-wrap input::placeholder {
@@ -282,7 +284,8 @@ export default {
 }
 
 .input-wrap input:focus {
-  border-color: #2563eb;
+  border-color: var(--primary);
+  background: #ffffff;
 }
 
 .toggle-visibility {
@@ -301,7 +304,7 @@ export default {
 .api-key-error {
   padding: 9px 11px;
   border: 1px solid #ffd6d2;
-  border-radius: 8px;
+  border-radius: var(--radius);
   color: #b42318;
   background: #fff8f7;
   font-size: 13px;
@@ -310,19 +313,19 @@ export default {
 
 .primary-button {
   min-height: 46px;
-  border: 1px solid #2563eb;
-  border-radius: 8px;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
   color: #ffffff;
-  background: #2563eb;
+  background: var(--primary);
   font-size: 15px;
   font-weight: 800;
   cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease;
+  transition: background 160ms var(--ease), border-color 160ms var(--ease);
 }
 
 .primary-button:hover:not(:disabled) {
-  border-color: #1d4ed8;
-  background: #1d4ed8;
+  border-color: var(--primary-dark);
+  background: var(--primary-dark);
 }
 
 .primary-button:disabled {
@@ -334,9 +337,9 @@ export default {
 .danger-button {
   min-height: 46px;
   border: 1px solid #ffd6d2;
-  border-radius: 8px;
+  border-radius: var(--radius);
   color: #b42318;
-  background: #ffffff;
+  background: var(--surface);
   font-size: 15px;
   font-weight: 800;
   cursor: pointer;
@@ -354,30 +357,30 @@ export default {
 
 .ghost-button-inline {
   min-height: 40px;
-  border: 1px solid #e4e8ef;
-  border-radius: 8px;
-  color: #667085;
-  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  background: var(--surface);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  transition: border-color 160ms ease, color 160ms ease;
+  transition: border-color 160ms var(--ease), color 160ms var(--ease);
 }
 
 .ghost-button-inline:hover {
-  border-color: #2563eb;
-  color: #2563eb;
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 /* Transition */
 .modal-fade-enter-active,
 .modal-fade-leave-active {
-  transition: opacity 200ms ease;
+  transition: opacity 200ms var(--ease);
 }
 
 .modal-fade-enter-active .api-key-modal,
 .modal-fade-leave-active .api-key-modal {
-  transition: transform 200ms ease, opacity 200ms ease;
+  transition: transform 200ms var(--ease), opacity 200ms var(--ease);
 }
 
 .modal-fade-enter-from {
