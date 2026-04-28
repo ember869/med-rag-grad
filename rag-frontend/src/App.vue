@@ -13,6 +13,15 @@
           <div :class="['status-row', { warning: !apiKeyConfigured }]">
             <span class="status-dot"></span>
             <span>{{ apiKeyStatusLabel }}</span>
+            <button
+              v-if="apiKeyConfigured"
+              type="button"
+              class="gear-button"
+              title="管理 API Key"
+              @click="openKeyManager"
+            >
+              &#9881;
+            </button>
           </div>
           <div class="metric">
             <strong>{{ userMessageCount }}</strong>
@@ -177,40 +186,28 @@
       </section>
     </main>
 
-    <div v-if="showApiKeyModal" class="modal-backdrop">
-      <form class="api-key-modal" @submit.prevent="submitApiKey">
-        <div class="modal-header">
-          <p class="eyebrow">模型访问</p>
-          <h2>输入 API Key</h2>
-        </div>
-        <p class="modal-copy">
-          当前后端还没有可用的 API Key。提交后会立即验证，验证通过后即可开始问答。
-        </p>
-        <label class="api-key-field">
-          <span>API Key</span>
-          <input
-            v-model="apiKeyInput"
-            type="password"
-            autocomplete="off"
-            placeholder="请输入 API Key"
-            :disabled="isSubmittingApiKey"
-          >
-        </label>
-        <div v-if="apiKeyError" class="api-key-error">{{ apiKeyError }}</div>
-        <button type="submit" :disabled="isSubmittingApiKey">
-          {{ isSubmittingApiKey ? '验证中' : '验证并保存' }}
-        </button>
-      </form>
-    </div>
+    <ApiKeyModal
+      :visible="showApiKeyModal"
+      :loading="isSubmittingApiKey"
+      :error="apiKeyError"
+      :configured="apiKeyConfigured"
+      @submit="submitApiKey"
+      @remove="clearApiKey"
+      @close="closeApiKeyModal"
+    />
   </div>
 </template>
 
 <script>
 import axios from 'axios';
 import { marked } from 'marked';
+import ApiKeyModal from './components/ApiKeyModal.vue';
 
 export default {
   name: 'App',
+  components: {
+    ApiKeyModal,
+  },
   data() {
     return {
       messages: [
@@ -219,7 +216,6 @@ export default {
       userInput: '',
       isLoading: false,
       apiKeyConfigured: false,
-      apiKeyInput: '',
       apiKeyError: '',
       showApiKeyModal: false,
       isSubmittingApiKey: false,
@@ -381,6 +377,19 @@ export default {
     fillPrompt(prompt) {
       this.userInput = prompt;
     },
+    clearApiKey() {
+      this.apiKeyConfigured = false;
+      this.showApiKeyModal = true;
+      this.apiKeyError = '';
+    },
+    openKeyManager() {
+      this.apiKeyError = '';
+      this.showApiKeyModal = true;
+    },
+    closeApiKeyModal() {
+      this.showApiKeyModal = false;
+      this.apiKeyError = '';
+    },
     async loadApiKeyStatus() {
       try {
         const response = await axios.get('/api/api-key/status');
@@ -391,12 +400,15 @@ export default {
         console.error('读取 API Key 状态时出错:', error);
         this.apiKeyConfigured = false;
         this.showApiKeyModal = true;
-        this.apiKeyError = '无法读取 API Key 状态，请确认后端服务已启动。';
+        if (error.request && !error.response) {
+          this.apiKeyError = '网络请求失败，请检查网络连接后重试';
+        } else {
+          this.apiKeyError = '后端服务不可用，请稍后重试';
+        }
       }
     },
-    async submitApiKey() {
-      const apiKey = this.apiKeyInput.trim();
-      if (!apiKey) {
+    async submitApiKey(apiKey) {
+      if (!apiKey || apiKey.trim() === '') {
         this.apiKeyError = 'API Key 不能为空';
         return;
       }
@@ -405,17 +417,21 @@ export default {
       this.apiKeyError = '';
       try {
         await axios.post('/api/api-key', {
-          api_key: apiKey,
+          api_key: apiKey.trim(),
         });
         this.apiKeyConfigured = true;
-        this.apiKeyInput = '';
         this.showApiKeyModal = false;
         this.loadKnowledgeBaseParameters();
       } catch (error) {
         console.error('提交 API Key 时出错:', error);
         this.apiKeyConfigured = false;
-        this.showApiKeyModal = true;
-        this.apiKeyError = error.response?.data?.detail || 'API Key 验证失败，请检查后重试。';
+        if (error.response) {
+          this.apiKeyError = error.response.data?.detail || 'Key 验证失败，请检查后重试';
+        } else if (error.request) {
+          this.apiKeyError = '网络请求失败，请检查网络连接后重试';
+        } else {
+          this.apiKeyError = '后端服务不可用，请稍后重试';
+        }
       } finally {
         this.isSubmittingApiKey = false;
       }
@@ -528,10 +544,14 @@ export default {
         if (error.response?.status === 401) {
           this.apiKeyConfigured = false;
           this.showApiKeyModal = true;
-          this.apiKeyError = error.response?.data?.detail || '请先输入 API Key';
-          this.messages.push({ sender: 'bot', text: '请先输入并验证 API Key，然后再继续提问。', sources: [] });
-        } else {
+          this.apiKeyError = error.response?.data?.detail || 'Key 已失效或余额不足，请更换后重试';
+          this.messages.push({ sender: 'bot', text: 'API Key 已失效，请重新输入后再继续提问。', sources: [] });
+        } else if (error.response) {
           this.messages.push({ sender: 'bot', text: '抱歉，我遇到了一个错误，请稍后再试。', sources: [] });
+        } else if (error.request) {
+          this.messages.push({ sender: 'bot', text: '网络请求失败，请检查网络连接后重试。', sources: [] });
+        } else {
+          this.messages.push({ sender: 'bot', text: '后端服务不可用，请稍后重试。', sources: [] });
         }
       } finally {
         this.isLoading = false;
@@ -815,6 +835,24 @@ export default {
 
   .status-row.warning .status-dot {
     background: #f59e0b;
+  }
+
+  .gear-button {
+    margin-left: auto;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 6px;
+    cursor: pointer;
+    transition: border-color 160ms var(--ease), color 160ms var(--ease);
+  }
+
+  .gear-button:hover {
+    border-color: var(--primary);
+    color: var(--primary);
   }
 
   .ingest-panel {
@@ -1289,108 +1327,6 @@ export default {
     background: #b7c0ce;
   }
 
-  .modal-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 20;
-    display: grid;
-    place-items: center;
-    padding: 20px;
-    background: rgba(15, 23, 42, 0.38);
-  }
-
-  .api-key-modal {
-    display: grid;
-    gap: 16px;
-    width: min(440px, 100%);
-    padding: 22px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--surface);
-    box-shadow: 0 22px 60px rgba(15, 23, 42, 0.22);
-  }
-
-  .modal-header h2,
-  .modal-header p,
-  .modal-copy {
-    margin: 0;
-  }
-
-  .modal-header h2 {
-    font-size: 22px;
-    line-height: 1.2;
-  }
-
-  .modal-copy {
-    color: var(--muted);
-    font-size: 14px;
-    line-height: 1.6;
-    text-wrap: pretty;
-  }
-
-  .api-key-field {
-    display: grid;
-    gap: 8px;
-    color: var(--muted);
-    font-size: 13px;
-    font-weight: 700;
-  }
-
-  .api-key-field input {
-    width: 100%;
-    min-height: 46px;
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius);
-    padding: 12px 13px;
-    color: var(--text);
-    background: var(--surface);
-    outline: none;
-    transition:
-      border-color 160ms var(--ease),
-      background 160ms var(--ease);
-  }
-
-  .api-key-field input::placeholder {
-    color: #98a2b3;
-  }
-
-  .api-key-field input:focus {
-    border-color: var(--primary);
-    background: #ffffff;
-  }
-
-  .api-key-error {
-    padding: 9px 11px;
-    border: 1px solid #ffd6d2;
-    border-radius: var(--radius);
-    color: #b42318;
-    background: #fff8f7;
-    font-size: 13px;
-    line-height: 1.45;
-    overflow-wrap: anywhere;
-  }
-
-  .api-key-modal button {
-    min-height: 46px;
-    border: 1px solid var(--primary);
-    border-radius: var(--radius);
-    color: #ffffff;
-    background: var(--primary);
-    font-weight: 800;
-    transition:
-      background 160ms var(--ease),
-      border-color 160ms var(--ease);
-  }
-
-  .api-key-modal button:hover:not(:disabled) {
-    border-color: var(--primary-dark);
-    background: var(--primary-dark);
-  }
-
-  .api-key-modal button:disabled {
-    border-color: #b7c0ce;
-    background: #b7c0ce;
-  }
 
   .typing {
     display: flex;
