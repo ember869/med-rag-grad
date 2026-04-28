@@ -123,7 +123,7 @@ export default {
   computed: {
     mode() {
       if (this.configured) {
-        return this.showEditor ? 'config' : 'manage';
+        return 'manage';
       }
       return 'config';
     },
