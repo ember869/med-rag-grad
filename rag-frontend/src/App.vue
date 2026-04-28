@@ -1069,7 +1069,6 @@ export default {
   .hint-header button:focus-visible,
   .ghost-button:focus-visible,
   .chat-input button:focus-visible,
-  .api-key-modal button:focus-visible,
   input:focus-visible,
   textarea:focus-visible {
     outline: 3px solid rgba(37, 99, 235, 0.16);
