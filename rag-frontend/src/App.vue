@@ -577,6 +577,9 @@ export default {
     --radius: 12px;
     --radius-sm: 8px;
     --radius-xs: 6px;
+    --border-strong: #cbd5e1;
+    --surface-muted: #f8fafc;
+    --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
     --shadow-card: 0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
     --shadow-elevated: 0 4px 12px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04);
     --gradient-brand: linear-gradient(135deg, #2563eb 0%, #0891b2 100%);
