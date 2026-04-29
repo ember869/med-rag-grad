@@ -81,11 +81,9 @@
             <p class="eyebrow">知识库问答</p>
             <h2>智能问答</h2>
           </div>
-          <div class="header-actions">
-            <button type="button" class="ghost-btn" @click="clearChat" :disabled="isLoading">
-              清空
-            </button>
-          </div>
+          <button type="button" class="ghost-btn" @click="clearChat" :disabled="isLoading">
+            清空
+          </button>
         </header>
 
         <div class="chat-history" ref="chatHistory">
@@ -116,7 +114,7 @@
           </div>
           <div v-if="isLoading" class="message bot">
             <div class="avatar">AI</div>
-            <div class="bubble loading-bubble">
+            <div class="bubble">
               <div class="sender">助手</div>
               <div class="typing">
                 <span></span>
@@ -1240,6 +1238,10 @@ export default {
     background: #f3f6fa;
     white-space: pre-wrap;
     word-wrap: break-word;
+  }
+  .message.user pre {
+    color: #fff;
+    background: rgba(255,255,255,0.15);
   }
   code {
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
