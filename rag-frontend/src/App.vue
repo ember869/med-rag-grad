@@ -517,15 +517,20 @@ export default {
       this.monitoringPollTimer = null;
     },
     async onTopKChange() {
+      if (this._topKChanging) return;
+      this._topKChanging = true;
       const previousValue = this.retrievalTopK;
       try {
-        await axios.patch('/api/knowledge-base/top-k', {
+        const response = await axios.patch('/api/knowledge-base/top-k', {
           top_k: this.selectedTopK,
         });
-        await this.loadKnowledgeBaseParameters();
+        this.knowledgeBaseParameters = response.data;
+        this.selectedTopK = response.data.retrieval_top_k;
       } catch (error) {
         console.error('更新 Top-K 时出错:', error);
         this.selectedTopK = previousValue;
+      } finally {
+        this._topKChanging = false;
       }
     },
     clearChat() {
@@ -1540,8 +1545,8 @@ export default {
 }
 
 .topk-select:disabled {
-  color: #98a2b3;
-  background: #f3f5f8;
+  color: var(--muted, #98a2b3);
+  background: var(--surface-muted, #f3f5f8);
   cursor: not-allowed;
 }
 </style>
