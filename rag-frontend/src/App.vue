@@ -627,6 +627,7 @@ export default {
   .chat-shell {
     display: flex;
     flex-direction: column;
+    min-width: 0;
     overflow: hidden;
     border-radius: var(--radius);
     border: 1px solid var(--border);
@@ -1013,6 +1014,7 @@ export default {
   /* Chat History */
   .chat-history {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: 24px;
     background: #f8fafc;
