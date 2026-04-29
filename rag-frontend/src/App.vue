@@ -28,7 +28,20 @@
             <span>本轮问题</span>
           </div>
           <div class="metric">
-            <strong>Top {{ retrievalTopK }}</strong>
+            <strong class="topk-metric">
+              Top
+              <select
+                class="topk-select"
+                v-model="selectedTopK"
+                @change="onTopKChange"
+                :disabled="isLoading"
+              >
+                <option :value="1">1</option>
+                <option :value="3">3</option>
+                <option :value="5">5</option>
+                <option :value="10">10</option>
+              </select>
+            </strong>
             <span>检索来源</span>
           </div>
         </div>
@@ -220,6 +233,7 @@ export default {
       showApiKeyModal: false,
       isSubmittingApiKey: false,
       isLoadingPrompts: false,
+      selectedTopK: 3,
       fallbackPrompts: [
         'What can cause chest pain after exercise?',
         'How should I understand persistent headaches?',
@@ -458,6 +472,7 @@ export default {
       try {
         const response = await axios.get('/api/knowledge-base/parameters');
         this.knowledgeBaseParameters = response.data;
+        this.selectedTopK = response.data.retrieval_top_k;
       } catch (error) {
         console.error('读取知识库参数时出错:', error);
         this.knowledgeBaseParametersError = '参数读取失败';
@@ -500,6 +515,18 @@ export default {
       if (!this.monitoringPollTimer) return;
       window.clearInterval(this.monitoringPollTimer);
       this.monitoringPollTimer = null;
+    },
+    async onTopKChange() {
+      const previousValue = this.retrievalTopK;
+      try {
+        await axios.patch('/api/knowledge-base/top-k', {
+          top_k: this.selectedTopK,
+        });
+        await this.loadKnowledgeBaseParameters();
+      } catch (error) {
+        console.error('更新 Top-K 时出错:', error);
+        this.selectedTopK = previousValue;
+      }
     },
     clearChat() {
       this.messages = [
@@ -1486,4 +1513,35 @@ export default {
       max-width: calc(100vw - 88px);
     }
   }
+.topk-metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.topk-select {
+  padding: 0 2px;
+  border: none;
+  border-radius: 4px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font: inherit;
+  font-size: 22px;
+  font-weight: inherit;
+  line-height: 1;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.topk-select:focus {
+  outline: 2px solid rgba(37, 99, 235, 0.25);
+  outline-offset: 2px;
+}
+
+.topk-select:disabled {
+  color: #98a2b3;
+  background: #f3f5f8;
+  cursor: not-allowed;
+}
 </style>
