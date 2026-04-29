@@ -1,7 +1,6 @@
 <template>
   <div id="app">
-    <main class="workspace">
-      <aside class="sidebar">
+    <aside class="sidebar">
         <div class="brand-card">
           <div class="brand-row">
             <div class="brand-mark">R</div>
@@ -138,7 +137,6 @@
           </button>
         </form>
       </section>
-    </main>
 
     <ApiKeyModal
       :visible="showApiKeyModal"
@@ -611,9 +609,8 @@ export default {
     padding: 16px;
     gap: 16px;
     margin: 0 auto;
+    background: var(--bg);
   }
-
-  .workspace { display: contents; }
 
   .sidebar {
     display: flex;
