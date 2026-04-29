@@ -34,7 +34,7 @@
                 class="topk-select"
                 v-model="selectedTopK"
                 @change="onTopKChange"
-                :disabled="isLoading"
+                :disabled="isLoading || _topKChanging"
               >
                 <option :value="1">1</option>
                 <option :value="3">3</option>
