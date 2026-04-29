@@ -1063,11 +1063,13 @@ export default {
     border: 1px solid var(--border);
     background: var(--surface);
     box-shadow: var(--shadow-card);
+    border-top-left-radius: 4px;
   }
   .message.user .bubble {
     color: #fff;
     background: var(--gradient-brand);
     box-shadow: var(--shadow-elevated);
+    border-top-right-radius: 4px;
   }
 
   .sender {
