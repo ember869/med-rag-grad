@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div class="app-shell">
     <aside class="sidebar">
         <div class="brand-card">
           <div class="brand-row">
@@ -604,21 +604,26 @@ export default {
   button { cursor: pointer; }
   button:disabled, input:disabled, textarea:disabled { cursor: not-allowed; }
 
-  #app {
+  .app-shell {
     display: grid;
     grid-template-columns: 288px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     height: 100vh;
+    height: 100dvh;
+    min-height: 640px;
     max-width: 1220px;
     padding: 16px;
     gap: 16px;
     margin: 0 auto;
     background: var(--bg);
+    align-items: stretch;
   }
 
   .sidebar {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    min-height: 0;
     overflow-y: auto;
     scrollbar-color: #c7d0dd transparent;
     scrollbar-width: thin;
@@ -628,6 +633,8 @@ export default {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    min-height: 0;
+    height: 100%;
     overflow: hidden;
     border-radius: var(--radius);
     border: 1px solid var(--border);
@@ -1014,7 +1021,7 @@ export default {
   /* Chat History */
   .chat-history {
     flex: 1;
-    min-height: 0;
+    min-height: 240px;
     overflow-y: auto;
     padding: 24px;
     background: #f8fafc;
@@ -1259,12 +1266,26 @@ export default {
     *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
   }
   @media (max-width: 900px) {
-    #app { grid-template-columns: 1fr; height: auto; min-height: 100vh; padding: 12px; }
-    .sidebar { gap: 12px; }
-    .chat-shell { min-height: 70vh; }
+    .app-shell {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto;
+      height: auto;
+      min-height: 100vh;
+      padding: 12px;
+    }
+    .sidebar {
+      order: 2;
+      gap: 12px;
+      overflow: visible;
+    }
+    .chat-shell {
+      order: 1;
+      min-height: 70vh;
+      height: auto;
+    }
   }
   @media (max-width: 640px) {
-    #app { padding: 8px; gap: 8px; }
+    .app-shell { padding: 8px; gap: 8px; }
     .sidebar { gap: 8px; }
     .chat-header { padding: 14px; }
     .chat-history { padding: 14px; }
