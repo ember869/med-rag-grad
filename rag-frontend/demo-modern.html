@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG 医疗助手 — 现代专业风格</title>
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --primary-soft: #eff6ff;
+    --accent: #0891b2;
+    --accent-soft: #ecfeff;
+    --success: #059669;
+    --success-soft: #ecfdf5;
+    --warning: #d97706;
+    --warning-soft: #fffbeb;
+    --danger: #dc2626;
+    --danger-soft: #fef2f2;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-xs: 6px;
+    --shadow-card: 0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
+    --shadow-elevated: 0 4px 12px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04);
+    --gradient-brand: linear-gradient(135deg, #2563eb 0%, #0891b2 100%);
+    --gradient-hero: linear-gradient(180deg, #f8fafc 0%, #f0f4f8 100%);
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+
+  html, body {
+    height: 100%;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #app {
+    display: grid;
+    grid-template-columns: 288px minmax(0, 1fr);
+    height: 100vh;
+    max-width: 1220px;
+    margin: 0 auto;
+    padding: 16px;
+    gap: 16px;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+    overflow-y: auto;
+  }
+
+  /* Brand Card */
+  .brand-card {
+    padding: 20px;
+    border-radius: var(--radius);
+    background: var(--gradient-brand);
+    color: #fff;
+    box-shadow: var(--shadow-elevated);
+  }
+  .brand-card .brand-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .brand-mark {
+    width: 38px; height: 38px;
+    display: grid; place-items: center;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(4px);
+    border-radius: var(--radius-sm);
+    font-size: 16px; font-weight: 800;
+  }
+  .brand-card h1 { font-size: 16px; font-weight: 700; }
+  .brand-card p { font-size: 12px; opacity: 0.85; margin-top: 3px; }
+
+  /* Cards */
+  .card {
+    padding: 16px;
+    border-radius: var(--radius);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-card);
+  }
+
+  .card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .card-label {
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.6px;
+  }
+
+  /* Status */
+  .status-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600;
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    box-shadow: 0 0 0 3px rgba(5,150,105,0.15);
+  }
+  .status-dot.online { background: var(--success); }
+  .status-dot.offline { background: var(--warning); }
+
+  .status-badge {
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  }
+  .status-badge.ready { background: var(--success-soft); color: var(--success); }
+  .status-badge.waiting { background: var(--warning-soft); color: var(--warning); }
+
+  /* Stat inline */
+  .stat-inline {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 12px 0;
+  }
+  .stat-inline + .stat-inline { border-top: 1px solid var(--border); }
+  .stat-inline .stat-value { font-size: 20px; font-weight: 700; }
+  .stat-inline .stat-label { font-size: 12px; color: var(--muted); }
+
+  .topk-select {
+    padding: 0 4px; border: none; border-radius: 6px;
+    color: var(--primary); background: var(--primary-soft);
+    font: inherit; font-size: 20px; font-weight: 700;
+    cursor: pointer; appearance: none;
+  }
+
+  /* Monitor */
+  .monitor-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .monitor-kpi {
+    padding: 12px; border-radius: var(--radius-sm);
+    background: var(--gradient-hero);
+    border: 1px solid var(--border);
+  }
+  .monitor-kpi .kpi-label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+  .monitor-kpi .kpi-value {
+    font-size: 17px; font-weight: 700; margin-top: 4px;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  }
+
+  .resource-pills {
+    display: flex; gap: 8px; margin-top: 8px;
+  }
+  .resource-pill {
+    flex: 1; padding: 10px; border-radius: var(--radius-sm);
+    background: var(--surface); border: 1px solid var(--border);
+    text-align: center;
+  }
+  .resource-pill .kpi-label { font-size: 10px; color: var(--muted); font-weight: 600; }
+  .resource-pill .kpi-value { font-size: 14px; font-weight: 700; margin-top: 3px; font-family: "SF Mono", "Fira Code", monospace; }
+
+  /* Ingest */
+  .ingest-badge {
+    padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.2px;
+  }
+  .ingest-badge.idle { background: #f1f5f9; color: #64748b; }
+  .ingest-badge.running { background: var(--primary-soft); color: var(--primary); }
+  .ingest-badge.succeeded { background: var(--success-soft); color: var(--success); }
+  .ingest-badge.failed { background: var(--danger-soft); color: var(--danger); }
+
+  .ingest-bar {
+    height: 6px; border-radius: 3px; background: #f1f5f9;
+    overflow: hidden; margin-top: 10px;
+  }
+  .ingest-bar-fill {
+    height: 100%; border-radius: 3px;
+    background: var(--gradient-brand); width: 72%;
+    transition: width 0.3s ease;
+  }
+
+  .param-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px;
+    margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
+  }
+  .param-item { font-size: 12px; }
+  .param-item .name { color: var(--muted); }
+  .param-item .val { font-weight: 600; font-family: "SF Mono", "Fira Code", monospace; }
+
+  /* Prompts */
+  .prompt-list { display: grid; gap: 6px; }
+  .prompt-btn {
+    text-align: left; padding: 11px 14px;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--surface); font-size: 12px; line-height: 1.5;
+    color: var(--text); cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .prompt-btn:hover {
+    border-color: var(--primary); background: var(--primary-soft);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
+  }
+
+  .refresh-chip {
+    padding: 4px 10px; border: 1px solid var(--border);
+    border-radius: 20px; background: var(--surface);
+    font-size: 11px; color: var(--primary); cursor: pointer;
+    font-weight: 600; transition: all 0.15s;
+  }
+  .refresh-chip:hover { border-color: var(--primary); background: var(--primary-soft); }
+
+  /* ── Chat Area ── */
+  .chat-shell {
+    display: flex; flex-direction: column; min-width: 0;
+    border-radius: var(--radius); overflow: hidden;
+    background: var(--surface); border: 1px solid var(--border);
+    box-shadow: var(--shadow-card);
+  }
+
+  .chat-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 24px;
+    background: var(--gradient-hero);
+    border-bottom: 1px solid var(--border);
+  }
+  .chat-header .eyebrow {
+    font-size: 10px; color: var(--primary); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.8px;
+  }
+  .chat-header h2 { font-size: 19px; font-weight: 700; margin-top: 2px; }
+
+  .ghost-btn {
+    padding: 7px 14px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); background: var(--surface);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.15s; color: var(--muted);
+  }
+  .ghost-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+
+  .chat-history {
+    flex: 1; overflow-y: auto; padding: 24px;
+    background: #f8fafc;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  .message { display: flex; gap: 10px; align-items: flex-start; }
+  .message.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 11px; font-weight: 700;
+    flex-shrink: 0; box-shadow: var(--shadow-card);
+  }
+  .message.bot .avatar {
+    background: var(--surface); color: var(--primary);
+    border: 1px solid var(--border);
+  }
+  .message.user .avatar {
+    background: var(--gradient-brand); color: #fff;
+  }
+
+  .bubble {
+    max-width: 72%; padding: 14px 16px; border-radius: var(--radius);
+    font-size: 14px; line-height: 1.7;
+  }
+  .message.bot .bubble {
+    background: var(--surface); border: 1px solid var(--border);
+    box-shadow: var(--shadow-card);
+    border-top-left-radius: 4px;
+  }
+  .message.user .bubble {
+    background: var(--gradient-brand); color: #fff;
+    box-shadow: var(--shadow-elevated);
+    border-top-right-radius: 4px;
+  }
+
+  .bubble .sender { font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+  .message.bot .bubble .sender { color: var(--primary); }
+  .message.user .bubble .sender { color: rgba(255,255,255,0.75); }
+
+  .sources-box {
+    margin-top: 10px; padding: 12px;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: #f8fafc;
+  }
+  .sources-box .sources-title {
+    font-size: 11px; font-weight: 700; color: var(--accent);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sources-box .sources-title::before { content: ''; display: block; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+  .sources-box ol { margin: 6px 0 0; padding-left: 18px; font-size: 12px; color: var(--muted); }
+  .sources-box pre { margin: 0; color: var(--text); font-family: "SF Mono", "Fira Code", monospace; font-size: 11px; white-space: pre-wrap; }
+
+  .metrics-row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .metrics-row span {
+    padding: 2px 8px; border: 1px solid var(--border);
+    border-radius: 20px; font-size: 10px; color: var(--muted);
+    font-family: "SF Mono", "Fira Code", monospace;
+    background: var(--surface);
+  }
+
+  /* Input */
+  .chat-input {
+    display: flex; gap: 10px; padding: 16px 24px;
+    border-top: 1px solid var(--border); background: var(--surface);
+  }
+  .chat-input textarea {
+    flex: 1; min-height: 46px; max-height: 130px; resize: vertical;
+    padding: 12px 14px; border: 1px solid #cbd5e1;
+    border-radius: var(--radius-sm); font: inherit; font-size: 14px;
+    outline: none; transition: all 0.15s; background: #f8fafc;
+  }
+  .chat-input textarea:focus {
+    border-color: var(--primary); background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  }
+  .chat-input textarea::placeholder { color: #94a3b8; }
+
+  .send-btn {
+    padding: 0 22px; min-height: 46px;
+    border: none; border-radius: var(--radius-sm);
+    background: var(--gradient-brand); color: #fff;
+    font-weight: 700; font-size: 13px; cursor: pointer;
+    box-shadow: 0 2px 6px rgba(37,99,235,0.25);
+    transition: all 0.15s;
+  }
+  .send-btn:hover { box-shadow: 0 4px 12px rgba(37,99,235,0.35); transform: translateY(-1px); }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside class="sidebar">
+    <!-- Brand -->
+    <div class="brand-card">
+      <div class="brand-row">
+        <div class="brand-mark">R</div>
+        <div>
+          <h1>RAG 医疗助手</h1>
+          <p>检索增强生成 · 智能问答</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div class="card">
+      <div class="status-row" style="margin-bottom:12px;">
+        <span class="status-dot online"></span>
+        <span>API Key 已配置</span>
+        <span class="status-badge ready" style="margin-left:auto;">就绪</span>
+      </div>
+      <div class="stat-inline">
+        <span class="stat-value">3</span>
+        <span class="stat-label">本轮问题</span>
+      </div>
+      <div class="stat-inline">
+        <span class="stat-value">Top <select class="topk-select"><option>3</option><option>5</option><option>10</option></select></span>
+        <span class="stat-label">检索来源数</span>
+      </div>
+    </div>
+
+    <!-- Monitoring -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">前端监控</span>
+        <span style="font-size:12px;font-weight:700;color:var(--primary);">142 次</span>
+      </div>
+      <div class="monitor-grid">
+        <div class="monitor-kpi"><div class="kpi-label">单次检索</div><div class="kpi-value">320ms</div></div>
+        <div class="monitor-kpi"><div class="kpi-label">回答生成</div><div class="kpi-value">1.2s</div></div>
+        <div class="monitor-kpi"><div class="kpi-label">平均响应</div><div class="kpi-value">980ms</div></div>
+        <div class="monitor-kpi"><div class="kpi-label">本次响应</div><div class="kpi-value">1.5s</div></div>
+      </div>
+      <div class="resource-pills">
+        <div class="resource-pill"><div class="kpi-label">CPU</div><div class="kpi-value">12.3%</div></div>
+        <div class="resource-pill"><div class="kpi-label">内存</div><div class="kpi-value">1.2GB</div></div>
+        <div class="resource-pill"><div class="kpi-label">系统</div><div class="kpi-value">45.6%</div></div>
+      </div>
+    </div>
+
+    <!-- Ingest -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">知识库状态</span>
+        <span class="ingest-badge succeeded">已完成</span>
+      </div>
+      <div class="ingest-bar"><div class="ingest-bar-fill"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px;">
+        <span>完成 · 新增 120 · 跳过 3</span>
+        <span>1,200 向量</span>
+      </div>
+      <div class="param-grid">
+        <div class="param-item"><span class="name">集合</span> <span class="val">healthcare</span></div>
+        <div class="param-item"><span class="name">向量数</span> <span class="val">1,200</span></div>
+        <div class="param-item"><span class="name">嵌入</span> <span class="val">gte-large</span></div>
+        <div class="param-item"><span class="name">LLM</span> <span class="val">gpt-4o</span></div>
+      </div>
+    </div>
+
+    <!-- Prompts -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">随机问题</span>
+        <button class="refresh-chip">换一批</button>
+      </div>
+      <div class="prompt-list">
+        <button class="prompt-btn">What can cause chest pain after exercise?</button>
+        <button class="prompt-btn">How should I understand persistent headaches?</button>
+        <button class="prompt-btn">What are common causes of stomach pain?</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Chat -->
+  <section class="chat-shell">
+    <header class="chat-header">
+      <div>
+        <div class="eyebrow">知识库问答</div>
+        <h2>智能问答</h2>
+      </div>
+      <button class="ghost-btn">清空对话</button>
+    </header>
+
+    <div class="chat-history">
+      <div class="message bot">
+        <div class="avatar">AI</div>
+        <div class="bubble">
+          <div class="sender">助手</div>
+          <div>你好！我是你的个人智能助手。你可以问我医疗健康相关问题，我会结合知识库检索结果回答。</div>
+        </div>
+      </div>
+      <div class="message user">
+        <div class="avatar">你</div>
+        <div class="bubble">
+          <div class="sender">你</div>
+          <div>What can cause chest pain after exercise?</div>
+        </div>
+      </div>
+      <div class="message bot">
+        <div class="avatar">AI</div>
+        <div class="bubble">
+          <div class="sender">助手</div>
+          <div>Chest pain after exercise can have several causes, ranging from benign to serious. <strong>Musculoskeletal issues</strong> like strained chest muscles are the most common. However, it could also indicate cardiovascular concerns such as angina, especially if accompanied by shortness of breath.</div>
+          <div class="metrics-row">
+            <span>检索 320ms</span><span>生成 1.2s</span><span>响应 1.5s</span>
+          </div>
+          <div class="sources-box">
+            <div class="sources-title">参考文献</div>
+            <ol>
+              <li><pre>Exercise-Induced Chest Pain: A Review of Common Causes. Journal of Sports Medicine, 2024.</pre></li>
+              <li><pre>Differentiating cardiac from non-cardiac chest pain in active patients. Cardiology Today, 2023.</pre></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <form class="chat-input" onsubmit="return false">
+      <textarea placeholder="请输入医疗健康相关问题..." rows="1"></textarea>
+      <button type="submit" class="send-btn">发送</button>
+    </form>
+  </section>
+</div>
+</body>
+</html>

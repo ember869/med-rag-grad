@@ -43,7 +43,7 @@ EMBED_MODEL_PATH = os.path.join(BASE_DIR, 'gte-large-en-v1.5')
 ONNX_MODEL_FILE = os.getenv("ONNX_MODEL_FILE", "onnx/model.onnx")
 ONNX_PROVIDER = os.getenv("ONNX_PROVIDER", "cpu")
 COLLECTION_NAME = "healthcare_qa_gte"
-RETRIEVAL_TOP_K = 3
+retrieval_top_k = 3
 
 # --- OpenAI API 配置 ---
 OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "https://api.deepseek.com/v1")
@@ -83,7 +83,7 @@ def create_vector_db() -> Chroma:
 vectordb = create_vector_db()
 
 # 将检索器配置为返回Top-K文档
-retriever = vectordb.as_retriever(search_kwargs={"k": RETRIEVAL_TOP_K})
+retriever = vectordb.as_retriever(search_kwargs={"k": retrieval_top_k})
 print("✅ 向量数据库加载成功。")
 
 process_monitor = psutil.Process(os.getpid()) if psutil else None
@@ -106,8 +106,17 @@ def refresh_retriever() -> None:
     global vectordb, retriever
     with retriever_lock:
         vectordb = create_vector_db()
-        retriever = vectordb.as_retriever(search_kwargs={"k": RETRIEVAL_TOP_K})
+        retriever = vectordb.as_retriever(search_kwargs={"k": retrieval_top_k})
     print("✅ 检索器已刷新。")
+
+
+def update_top_k(new_k: int) -> None:
+    """Update retrieval Top-K and rebuild retriever (without reloading vector DB)."""
+    global retrieval_top_k, retriever
+    with retriever_lock:
+        retrieval_top_k = new_k
+        retriever = vectordb.as_retriever(search_kwargs={"k": new_k})
+
 
 # 3. 语言模型会在 API Key 可用后初始化
 llm_lock = threading.Lock()
@@ -311,6 +320,10 @@ class KnowledgeBaseParametersResponse(BaseModel):
     llm_model: str
     api_base: str
     api_key_configured: bool
+
+
+class TopKUpdateRequest(BaseModel):
+    top_k: int
 
 
 app = FastAPI(title="RAG Backend")
@@ -528,7 +541,7 @@ def knowledge_base_parameters() -> KnowledgeBaseParametersResponse:
     return KnowledgeBaseParametersResponse(
         collection_name=COLLECTION_NAME,
         collection_count=get_collection_count(),
-        retrieval_top_k=RETRIEVAL_TOP_K,
+        retrieval_top_k=retrieval_top_k,
         max_documents=MAX_DOCUMENTS,
         batch_size=BATCH_SIZE,
         tokenize_max_length=TOKENIZE_MAX_LENGTH,
@@ -539,6 +552,15 @@ def knowledge_base_parameters() -> KnowledgeBaseParametersResponse:
         api_base=OPENAI_API_BASE,
         api_key_configured=is_api_key_configured(),
     )
+
+
+@app.patch("/knowledge-base/top-k", response_model=KnowledgeBaseParametersResponse)
+def update_knowledge_base_top_k(request: TopKUpdateRequest) -> KnowledgeBaseParametersResponse:
+    if not (1 <= request.top_k <= 100):
+        raise HTTPException(status_code=422, detail="top_k 必须在 1-100 之间")
+
+    update_top_k(request.top_k)
+    return knowledge_base_parameters()
 
 
 @app.get("/monitoring", response_model=MonitoringResponse)

@@ -54,3 +54,4 @@ rag-backend/healthcaremagicR/*
 *.pickle
 *.sqlite3
 .superpowers/
+.worktrees/

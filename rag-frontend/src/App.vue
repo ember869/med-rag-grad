@@ -1,121 +1,76 @@
 <template>
-  <div id="app">
-    <main class="workspace">
-      <aside class="sidebar">
-        <div class="brand">
-          <div class="brand-mark">R</div>
-          <div>
-            <h1>RAG 医疗助手</h1>
-            <p>基于知识库回答</p>
+  <div class="app-shell">
+    <aside class="sidebar">
+        <div class="brand-card">
+          <div class="brand-row">
+            <div class="brand-mark">R</div>
+            <div>
+              <h1>RAG 医疗助手</h1>
+              <p>检索增强生成 · 智能问答</p>
+            </div>
           </div>
         </div>
-        <div class="status-panel">
-          <div :class="['status-row', { warning: !apiKeyConfigured }]">
-            <span class="status-dot"></span>
+        <div class="card">
+          <div :class="['status-row', { offline: !apiKeyConfigured }]" style="margin-bottom:12px;">
+            <span :class="['status-dot', apiKeyConfigured ? 'online' : 'offline']"></span>
             <span>{{ apiKeyStatusLabel }}</span>
-            <button
-              v-if="apiKeyConfigured"
-              type="button"
-              class="gear-button"
-              title="管理 API Key"
-              @click="openKeyManager"
-            >
-              &#9881;
-            </button>
+            <span v-if="apiKeyConfigured" class="status-badge ready" style="margin-left:auto;">就绪</span>
+            <span v-else class="status-badge waiting" style="margin-left:auto;">待配置</span>
+            <button v-if="apiKeyConfigured" type="button" class="gear-button" title="管理 API Key" @click="openKeyManager">&#9881;</button>
           </div>
-          <div class="metric">
-            <strong>{{ userMessageCount }}</strong>
-            <span>本轮问题</span>
+          <div class="stat-inline">
+            <span class="stat-value">{{ userMessageCount }}</span>
+            <span class="stat-label">本轮问题</span>
           </div>
-          <div class="metric">
-            <strong>Top {{ retrievalTopK }}</strong>
-            <span>检索来源</span>
+          <div class="stat-inline">
+            <span class="stat-value">Top
+              <select class="topk-select" v-model="selectedTopK" @change="onTopKChange" :disabled="isLoading || _topKChanging">
+                <option :value="1">1</option><option :value="3">3</option><option :value="5">5</option><option :value="10">10</option>
+              </select>
+            </span>
+            <span class="stat-label">检索来源数</span>
           </div>
         </div>
-        <div class="monitor-panel">
-          <div class="monitor-header">
-            <span>前端监控</span>
-            <strong>{{ monitoringStatus.request_count || 0 }} 次</strong>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-label">前端监控</span>
+            <span class="monitor-count">{{ monitoringStatus.request_count || 0 }} 次</span>
           </div>
           <div class="monitor-grid">
-            <div class="monitor-item">
-              <span>单次检索</span>
-              <strong>{{ formatDuration(monitoringStatus.last_retrieval_time_ms) }}</strong>
-            </div>
-            <div class="monitor-item">
-              <span>回答生成</span>
-              <strong>{{ formatDuration(monitoringStatus.last_generation_time_ms) }}</strong>
-            </div>
-            <div class="monitor-item">
-              <span>平均响应</span>
-              <strong>{{ formatDuration(monitoringStatus.average_response_time_ms) }}</strong>
-            </div>
-            <div class="monitor-item">
-              <span>本次响应</span>
-              <strong>{{ formatDuration(monitoringStatus.last_response_time_ms) }}</strong>
-            </div>
-          </div>
-          <div class="resource-strip">
-            <div>
-              <span>CPU</span>
-              <strong>{{ formatPercent(monitoringResources.cpu_percent) }}</strong>
-            </div>
-            <div>
-              <span>内存</span>
-              <strong>{{ formatMegabytes(monitoringResources.memory_rss_mb) }}</strong>
-            </div>
-            <div>
-              <span>系统内存</span>
-              <strong>{{ formatPercent(monitoringResources.system_memory_percent) }}</strong>
-            </div>
+            <div class="monitor-kpi"><span class="kpi-label">单次检索</span><strong class="kpi-value">{{ formatDuration(monitoringStatus.last_retrieval_time_ms) }}</strong></div>
+            <div class="monitor-kpi"><span class="kpi-label">回答生成</span><strong class="kpi-value">{{ formatDuration(monitoringStatus.last_generation_time_ms) }}</strong></div>
+            <div class="monitor-kpi"><span class="kpi-label">平均响应</span><strong class="kpi-value">{{ formatDuration(monitoringStatus.average_response_time_ms) }}</strong></div>
+            <div class="monitor-kpi"><span class="kpi-label">本次响应</span><strong class="kpi-value">{{ formatDuration(monitoringStatus.last_response_time_ms) }}</strong></div>
           </div>
           <div v-if="monitoringError" class="monitor-error">{{ monitoringError }}</div>
         </div>
-        <div class="ingest-panel">
-          <div class="ingest-header">
-            <span>知识库状态</span>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-label">知识库状态</span>
             <strong :class="['ingest-badge', ingestStatus.status]">{{ ingestStatusLabel }}</strong>
           </div>
-          <div class="ingest-progress">
-            <div class="ingest-progress-bar" :style="{ width: ingestProgressPercent + '%' }"></div>
-          </div>
+          <div class="ingest-bar"><div class="ingest-bar-fill" :style="{ width: ingestProgressPercent + '%' }"></div></div>
           <div class="ingest-meta">
             <span>{{ ingestProgressText }}</span>
             <span>{{ ingestStatus.collection_count || 0 }} 向量</span>
           </div>
           <div v-if="ingestStatus.error" class="ingest-error">{{ ingestStatus.error }}</div>
-          <div class="kb-params">
-            <div class="kb-params-title">
-              <span>运行参数</span>
-              <span v-if="isLoadingKnowledgeBaseParameters">读取中</span>
-            </div>
-            <div v-if="knowledgeBaseParametersError" class="kb-params-error">
-              {{ knowledgeBaseParametersError }}
-            </div>
-            <dl v-else class="kb-param-list">
-              <template v-for="item in knowledgeBaseParameterItems" :key="item.label">
-                <dt>{{ item.label }}</dt>
-                <dd>{{ item.value }}</dd>
-              </template>
-            </dl>
+          <div class="param-grid" v-if="knowledgeBaseParameters">
+            <div class="param-item"><span class="name">Top-K</span> <span class="val">{{ formatParameterNumber(knowledgeBaseParameters.retrieval_top_k) }}</span></div>
+            <div class="param-item"><span class="name">批大小</span> <span class="val">{{ formatParameterNumber(knowledgeBaseParameters.batch_size) }}</span></div>
+            <div class="param-item"><span class="name">Token 长度</span> <span class="val">{{ formatParameterNumber(knowledgeBaseParameters.tokenize_max_length) }}</span></div>
+            <div class="param-item"><span class="name">LLM</span> <span class="val">{{ knowledgeBaseParameters.llm_model || '-' }}</span></div>
           </div>
+          <div v-if="knowledgeBaseParametersError" class="kb-params-error">{{ knowledgeBaseParametersError }}</div>
         </div>
-        <div class="hint-header">
-          <span>随机问题</span>
-          <button type="button" @click="loadSamplePrompts" :disabled="isLoading || isLoadingPrompts">
-            {{ isLoadingPrompts ? '抽取中' : '换一批' }}
-          </button>
-        </div>
-        <div class="hint-list">
-          <button
-            v-for="prompt in samplePrompts"
-            :key="prompt"
-            type="button"
-            @click="fillPrompt(prompt)"
-            :disabled="isLoading"
-          >
-            {{ prompt }}
-          </button>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-label">随机问题</span>
+            <button type="button" class="refresh-chip" @click="loadSamplePrompts" :disabled="isLoading || isLoadingPrompts">{{ isLoadingPrompts ? '抽取中' : '换一批' }}</button>
+          </div>
+          <div class="prompt-list">
+            <button v-for="prompt in samplePrompts" :key="prompt" type="button" class="prompt-btn" @click="fillPrompt(prompt)" :disabled="isLoading">{{ prompt }}</button>
+          </div>
         </div>
       </aside>
 
@@ -125,11 +80,9 @@
             <p class="eyebrow">知识库问答</p>
             <h2>智能问答</h2>
           </div>
-          <div class="header-actions">
-            <button type="button" class="ghost-button" @click="clearChat" :disabled="isLoading">
-              清空
-            </button>
-          </div>
+          <button type="button" class="ghost-btn" @click="clearChat" :disabled="isLoading">
+            清空
+          </button>
         </header>
 
         <div class="chat-history" ref="chatHistory">
@@ -143,7 +96,7 @@
             <div class="bubble">
               <div class="sender">{{ message.sender === 'user' ? '你' : '助手' }}</div>
               <div class="text" v-html="formatMessage(message.text)"></div>
-              <div v-if="message.metrics" class="message-metrics">
+              <div v-if="message.metrics" class="metrics-row">
                 <span>检索 {{ formatDuration(message.metrics.retrieval_time_ms) }}</span>
                 <span>生成 {{ formatDuration(message.metrics.generation_time_ms) }}</span>
                 <span>响应 {{ formatDuration(message.metrics.response_time_ms) }}</span>
@@ -160,7 +113,7 @@
           </div>
           <div v-if="isLoading" class="message bot">
             <div class="avatar">AI</div>
-            <div class="bubble loading-bubble">
+            <div class="bubble">
               <div class="sender">助手</div>
               <div class="typing">
                 <span></span>
@@ -179,12 +132,11 @@
             :disabled="isLoading || !apiKeyConfigured"
             rows="1"
           ></textarea>
-          <button type="submit" :disabled="isLoading || !apiKeyConfigured || userInput.trim() === ''">
+          <button type="submit" class="send-btn" :disabled="isLoading || !apiKeyConfigured || userInput.trim() === ''">
             {{ isLoading ? '思考中' : '发送' }}
           </button>
         </form>
       </section>
-    </main>
 
     <ApiKeyModal
       :visible="showApiKeyModal"
@@ -220,6 +172,7 @@ export default {
       showApiKeyModal: false,
       isSubmittingApiKey: false,
       isLoadingPrompts: false,
+      selectedTopK: 3,
       fallbackPrompts: [
         'What can cause chest pain after exercise?',
         'How should I understand persistent headaches?',
@@ -458,6 +411,7 @@ export default {
       try {
         const response = await axios.get('/api/knowledge-base/parameters');
         this.knowledgeBaseParameters = response.data;
+        this.selectedTopK = response.data.retrieval_top_k;
       } catch (error) {
         console.error('读取知识库参数时出错:', error);
         this.knowledgeBaseParametersError = '参数读取失败';
@@ -500,6 +454,23 @@ export default {
       if (!this.monitoringPollTimer) return;
       window.clearInterval(this.monitoringPollTimer);
       this.monitoringPollTimer = null;
+    },
+    async onTopKChange() {
+      if (this._topKChanging) return;
+      this._topKChanging = true;
+      const previousValue = this.retrievalTopK;
+      try {
+        const response = await axios.patch('/api/knowledge-base/top-k', {
+          top_k: this.selectedTopK,
+        });
+        this.knowledgeBaseParameters = response.data;
+        this.selectedTopK = response.data.retrieval_top_k;
+      } catch (error) {
+        console.error('更新 Top-K 时出错:', error);
+        this.selectedTopK = previousValue;
+      } finally {
+        this._topKChanging = false;
+      }
     },
     clearChat() {
       this.messages = [
@@ -587,412 +558,175 @@ export default {
 
 <style>
   :root {
-    --bg: #f5f7fb;
+    --bg: #f0f4f8;
     --surface: #ffffff;
-    --surface-muted: #f8fafc;
-    --text: #172033;
-    --muted: #667085;
-    --border: #e4e8ef;
-    --border-strong: #cfd7e3;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
     --primary: #2563eb;
     --primary-dark: #1d4ed8;
-    --primary-soft: #eef4ff;
-    --success: #15966b;
-    --radius: 8px;
-    --shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+    --primary-soft: #eff6ff;
+    --accent: #0891b2;
+    --accent-soft: #ecfeff;
+    --success: #059669;
+    --success-soft: #ecfdf5;
+    --warning: #d97706;
+    --warning-soft: #fffbeb;
+    --danger: #dc2626;
+    --danger-soft: #fef2f2;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-xs: 6px;
+    --border-strong: #cbd5e1;
+    --surface-muted: #f8fafc;
     --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --shadow-card: 0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
+    --shadow-elevated: 0 4px 12px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04);
+    --gradient-brand: linear-gradient(135deg, #2563eb 0%, #0891b2 100%);
+    --gradient-hero: linear-gradient(180deg, #f8fafc 0%, #f0f4f8 100%);
   }
 
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
-  html,
-  body {
+  html, body {
     margin: 0;
     min-height: 100%;
     color: var(--text);
     background: var(--bg);
   }
 
-  body,
-  button,
-  input,
-  textarea {
-    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", ui-sans-serif, sans-serif;
+  body, button, input, textarea {
+    font-family: "Inter", "Segoe UI", "PingFang SC", "Microsoft YaHei", ui-sans-serif, sans-serif;
     letter-spacing: 0;
   }
 
-  button,
-  input,
-  textarea {
-    font: inherit;
-  }
+  button, input, textarea { font: inherit; }
+  button { cursor: pointer; }
+  button:disabled, input:disabled, textarea:disabled { cursor: not-allowed; }
 
-  button {
-    cursor: pointer;
-  }
-
-  button:disabled,
-  input:disabled,
-  textarea:disabled {
-    cursor: not-allowed;
-  }
-
-  #app {
-    min-height: 100vh;
-    padding: 24px;
-    background: var(--bg);
-  }
-
-  .workspace {
+  .app-shell {
     display: grid;
-    grid-template-columns: 280px minmax(0, 1fr);
-    gap: 16px;
-    width: min(1120px, 100%);
-    height: calc(100dvh - 48px);
+    grid-template-columns: 288px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    height: 100vh;
+    height: 100dvh;
     min-height: 640px;
+    max-width: 1220px;
+    padding: 16px;
+    gap: 16px;
     margin: 0 auto;
-  }
-
-  .sidebar,
-  .chat-shell {
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--surface);
-    box-shadow: var(--shadow);
+    background: var(--bg);
+    align-items: stretch;
   }
 
   .sidebar {
     display: flex;
     flex-direction: column;
-    gap: 18px;
-    min-width: 0;
-    padding: 20px;
+    gap: 16px;
+    min-height: 0;
     overflow-y: auto;
     scrollbar-color: #c7d0dd transparent;
     scrollbar-width: thin;
   }
 
-  .brand {
+  .chat-shell {
     display: flex;
-    align-items: center;
-    gap: 12px;
+    flex-direction: column;
     min-width: 0;
-  }
-
-  .brand-mark {
-    display: grid;
-    width: 40px;
-    height: 40px;
-    flex: 0 0 40px;
-    place-items: center;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
     border-radius: var(--radius);
-    color: var(--primary);
-    background: var(--primary-soft);
-    font-size: 18px;
-    font-weight: 800;
-  }
-
-  .brand h1,
-  .brand p,
-  .chat-header h2,
-  .eyebrow {
-    margin: 0;
-  }
-
-  .brand h1 {
-    font-size: 17px;
-    line-height: 1.25;
-    text-wrap: pretty;
-  }
-
-  .brand p {
-    margin-top: 3px;
-    color: var(--muted);
-    font-size: 12px;
-  }
-
-  .status-panel {
-    display: grid;
-    gap: 10px;
-    padding: 14px;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--surface-muted);
-  }
-
-  .monitor-panel {
-    display: grid;
-    gap: 12px;
-    padding: 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
     background: var(--surface);
   }
 
-  .monitor-header {
+  /* Brand Card */
+  .brand-card {
+    padding: 20px;
+    border-radius: var(--radius);
+    background: var(--gradient-brand);
+    color: #fff;
+    box-shadow: var(--shadow-elevated);
+  }
+  .brand-card .brand-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(4px);
+    border-radius: var(--radius-sm);
+    font-size: 16px;
+    font-weight: 800;
+  }
+  .brand-card h1 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+  }
+  .brand-card p {
+    font-size: 12px;
+    opacity: 0.85;
+    margin: 3px 0 0 0;
+  }
+
+  /* Card Base */
+  .card {
+    padding: 16px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+  }
+  .card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+    margin-bottom: 12px;
+  }
+  .card-label {
     color: var(--muted);
     font-size: 13px;
     font-weight: 700;
   }
 
-  .monitor-header strong {
-    color: var(--primary);
-    font-size: 12px;
-  }
-
-  .monitor-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .monitor-item {
-    display: grid;
-    gap: 4px;
-    min-width: 0;
-    padding: 9px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--surface-muted);
-  }
-
-  .monitor-item span,
-  .resource-strip span {
-    color: var(--muted);
-    font-size: 11px;
-    line-height: 1.25;
-  }
-
-  .monitor-item strong {
-    color: #263143;
-    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-    font-size: 14px;
-    line-height: 1.2;
-    overflow-wrap: anywhere;
-  }
-
-  .resource-strip {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--border);
-  }
-
-  .resource-strip div {
-    display: grid;
-    gap: 4px;
-    min-width: 0;
-    padding: 8px;
-    background: #ffffff;
-  }
-
-  .resource-strip strong {
-    color: #263143;
-    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-    font-size: 12px;
-    line-height: 1.2;
-    overflow-wrap: anywhere;
-  }
-
-  .monitor-error {
-    padding: 8px 10px;
-    border: 1px solid #ffe1a6;
-    border-radius: var(--radius);
-    color: #936000;
-    background: #fff9ec;
-    font-size: 12px;
-    line-height: 1.4;
-  }
-
+  /* Status Row */
   .status-row {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: var(--success);
     font-size: 13px;
     font-weight: 700;
+    color: var(--success);
   }
-
-  .status-row.warning {
-    color: #936000;
-  }
-
+  .status-row.offline { color: var(--warning); }
   .status-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--success);
+    flex: 0 0 8px;
   }
+  .status-dot.online { background: var(--success); }
+  .status-dot.offline { background: var(--warning); }
 
-  .status-row.warning .status-dot {
-    background: #f59e0b;
-  }
-
-  .gear-button {
-    margin-left: auto;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--muted);
-    font-size: 16px;
-    line-height: 1;
-    padding: 2px 6px;
-    cursor: pointer;
-    transition: border-color 160ms var(--ease), color 160ms var(--ease);
-  }
-
-  .gear-button:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-  }
-
-  .ingest-panel {
-    display: grid;
-    gap: 10px;
-    padding: 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--surface);
-  }
-
-  .ingest-header,
-  .ingest-meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-  }
-
-  .ingest-header {
-    color: var(--muted);
-    font-size: 13px;
+  .status-badge {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
     font-weight: 700;
   }
+  .status-badge.ready { color: var(--success); background: var(--success-soft); }
+  .status-badge.waiting { color: var(--warning); background: var(--warning-soft); }
 
-  .ingest-badge {
-    min-width: 58px;
-    padding: 4px 8px;
-    border-radius: 999px;
-    color: #475467;
-    background: #eef2f6;
-    font-size: 12px;
-    text-align: center;
-  }
-
-  .ingest-badge.running {
-    color: var(--primary);
-    background: var(--primary-soft);
-  }
-
-  .ingest-badge.succeeded {
-    color: var(--success);
-    background: #eaf8f2;
-  }
-
-  .ingest-badge.failed {
-    color: #b42318;
-    background: #fff1f0;
-  }
-
-  .ingest-progress {
-    height: 8px;
-    overflow: hidden;
-    border-radius: 999px;
-    background: #edf1f6;
-  }
-
-  .ingest-progress-bar {
-    height: 100%;
-    border-radius: inherit;
-    background: var(--primary);
-    transition: width 200ms var(--ease);
-  }
-
-  .ingest-meta {
-    color: var(--muted);
-    font-size: 12px;
-    line-height: 1.4;
-  }
-
-  .ingest-error {
-    padding: 8px 10px;
-    border: 1px solid #ffd6d2;
-    border-radius: var(--radius);
-    color: #b42318;
-    background: #fff8f7;
-    font-size: 12px;
-    line-height: 1.4;
-    overflow-wrap: anywhere;
-  }
-
-  .kb-params {
-    display: grid;
-    gap: 8px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
-  }
-
-  .kb-params-title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    color: var(--muted);
-    font-size: 12px;
-    font-weight: 700;
-  }
-
-  .kb-params-title span:last-child {
-    color: var(--primary);
-    font-weight: 600;
-  }
-
-  .kb-param-list {
-    display: grid;
-    grid-template-columns: minmax(68px, auto) minmax(0, 1fr);
-    gap: 7px 10px;
-    margin: 0;
-  }
-
-  .kb-param-list dt,
-  .kb-param-list dd {
-    min-width: 0;
-    margin: 0;
-    font-size: 12px;
-    line-height: 1.35;
-  }
-
-  .kb-param-list dt {
-    color: var(--muted);
-  }
-
-  .kb-param-list dd {
-    color: #263143;
-    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-    text-align: right;
-    overflow-wrap: anywhere;
-  }
-
-  .kb-params-error {
-    padding: 8px 10px;
-    border: 1px solid #ffe1a6;
-    border-radius: var(--radius);
-    color: #936000;
-    background: #fff9ec;
-    font-size: 12px;
-    line-height: 1.4;
-  }
-
-  .metric {
+  .stat-inline {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -1000,138 +734,308 @@ export default {
     padding-top: 10px;
     border-top: 1px solid var(--border);
   }
-
-  .metric strong {
+  .stat-value {
     font-size: 22px;
     line-height: 1;
+    font-weight: 700;
   }
-
-  .metric span,
-  .sender,
-  .eyebrow {
+  .stat-label {
     color: var(--muted);
     font-size: 12px;
   }
 
-  .hint-header {
+  .gear-button {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 6px;
+    cursor: pointer;
+    transition: border-color 160ms ease, color 160ms ease;
+  }
+  .gear-button:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  /* TopK Select */
+  .topk-select {
+    padding: 0 2px;
+    border: none;
+    border-radius: 4px;
+    color: var(--primary);
+    background: var(--primary-soft);
+    font: inherit;
+    font-size: 22px;
+    font-weight: inherit;
+    line-height: 1;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .topk-select:focus {
+    outline: 2px solid rgba(37,99,235,0.25);
+    outline-offset: 2px;
+  }
+  .topk-select:disabled {
+    color: var(--muted);
+    background: var(--primary-soft);
+    cursor: not-allowed;
+  }
+
+  /* Monitor Grid */
+  .monitor-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .monitor-kpi {
+    display: grid;
+    gap: 4px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--gradient-hero);
+  }
+  .kpi-label {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .kpi-value {
+    font-size: 17px;
+    font-weight: 700;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    line-height: 1.2;
+  }
+  .monitor-count {
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .monitor-error {
+    margin-top: 10px;
+    padding: 8px 10px;
+    border: 1px solid #ffe1a6;
+    border-radius: var(--radius);
+    color: #936000;
+    background: #fff9ec;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  /* Ingest */
+  .ingest-badge {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .ingest-badge.idle { color: var(--muted); background: #eef2f6; }
+  .ingest-badge.running { color: var(--primary); background: var(--primary-soft); }
+  .ingest-badge.succeeded { color: var(--success); background: var(--success-soft); }
+  .ingest-badge.failed { color: var(--danger); background: var(--danger-soft); }
+
+  .ingest-bar {
+    height: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #edf1f6;
+    margin-bottom: 8px;
+  }
+  .ingest-bar-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: var(--gradient-brand);
+    transition: width 200ms ease;
+  }
+
+  .ingest-meta {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
     color: var(--muted);
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 12px;
+    line-height: 1.4;
   }
 
-  .hint-list {
+  .ingest-error {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border: 1px solid #ffd6d2;
+    border-radius: var(--radius);
+    color: var(--danger);
+    background: var(--danger-soft);
+    font-size: 12px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  /* Param Grid */
+  .param-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 12px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .param-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .param-item .name { color: var(--muted); }
+  .param-item .val {
+    color: var(--text);
+    font-weight: 600;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .kb-params-error {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border: 1px solid #ffe1a6;
+    border-radius: var(--radius);
+    color: #936000;
+    background: #fff9ec;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  /* Prompt Section */
+  .prompt-list {
     display: grid;
     gap: 8px;
   }
-
-  .hint-list button,
-  .hint-header button,
-  .ghost-button {
+  .prompt-btn {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-sm);
     color: var(--text);
     background: var(--surface);
-    transition:
-      border-color 160ms var(--ease),
-      background 160ms var(--ease),
-      color 160ms var(--ease);
-  }
-
-  .hint-header button {
-    height: 30px;
-    padding: 0 10px;
-    color: var(--primary);
     font-size: 13px;
-  }
-
-  .hint-list button {
-    min-height: 44px;
-    padding: 10px 11px;
+    line-height: 1.45;
     text-align: left;
-    color: #344054;
-    line-height: 1.4;
     text-wrap: pretty;
+    cursor: pointer;
+    transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
   }
-
-  .hint-list button:hover:not(:disabled),
-  .hint-header button:hover:not(:disabled),
-  .ghost-button:hover:not(:disabled) {
+  .prompt-btn:hover:not(:disabled) {
     border-color: var(--primary);
-    color: var(--primary);
     background: var(--primary-soft);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
   }
-
-  .hint-list button:focus-visible,
-  .hint-header button:focus-visible,
-  .ghost-button:focus-visible,
-  .chat-input button:focus-visible,
-  input:focus-visible,
-  textarea:focus-visible {
-    outline: 3px solid rgba(37, 99, 235, 0.16);
+  .prompt-btn:focus-visible {
+    outline: 3px solid rgba(37,99,235,0.16);
     outline-offset: 2px;
   }
-
-  .hint-list button:disabled,
-  .hint-header button:disabled,
-  .ghost-button:disabled {
+  .prompt-btn:disabled {
     color: #98a2b3;
     background: #f3f5f8;
   }
 
-  .chat-shell {
-    display: flex;
-    min-width: 0;
-    flex-direction: column;
-    overflow: hidden;
+  .refresh-chip {
+    height: 28px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--primary);
+    background: var(--surface);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color 160ms ease, background 160ms ease;
+  }
+  .refresh-chip:hover:not(:disabled) {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+  }
+  .refresh-chip:disabled {
+    color: #98a2b3;
+    background: #f3f5f8;
+    cursor: not-allowed;
   }
 
+  /* Chat Header */
   .chat-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 18px 22px;
+    padding: 18px 24px;
     border-bottom: 1px solid var(--border);
-    background: var(--surface);
+    background: var(--gradient-hero);
   }
-
   .eyebrow {
-    margin-bottom: 4px;
+    margin: 0 0 4px 0;
+    color: var(--primary);
+    font-size: 10px;
     font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
-
   .chat-header h2 {
+    margin: 0;
     font-size: 22px;
     line-height: 1.2;
   }
 
-  .ghost-button {
+  .ghost-btn {
     min-width: 68px;
     height: 36px;
     padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    background: var(--surface);
     font-weight: 700;
+    cursor: pointer;
+    transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+  }
+  .ghost-btn:hover:not(:disabled) {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-soft);
+  }
+  .ghost-btn:focus-visible {
+    outline: 3px solid rgba(37,99,235,0.16);
+    outline-offset: 2px;
+  }
+  .ghost-btn:disabled {
+    color: #98a2b3;
+    background: #f3f5f8;
   }
 
+  /* Chat History */
   .chat-history {
     flex: 1;
+    min-height: 240px;
     overflow-y: auto;
-    padding: 22px;
-    background: #fbfcfe;
+    padding: 24px;
+    background: #f8fafc;
     scrollbar-color: #c7d0dd transparent;
     scrollbar-width: thin;
   }
 
+  /* Message Layout */
   .message {
     display: flex;
     align-items: flex-start;
     gap: 10px;
     margin-bottom: 16px;
   }
-
   .message.user {
     flex-direction: row-reverse;
   }
@@ -1143,39 +1047,45 @@ export default {
     flex: 0 0 34px;
     place-items: center;
     border-radius: 50%;
-    color: var(--primary);
-    background: var(--primary-soft);
     font-size: 12px;
     font-weight: 800;
+    background: var(--surface);
+    color: var(--muted);
+    border: 1px solid var(--border);
   }
-
   .message.user .avatar {
-    color: #ffffff;
-    background: var(--primary);
+    color: #fff;
+    background: var(--gradient-brand);
+    border: none;
   }
 
   .bubble {
     width: fit-content;
     max-width: min(720px, 78%);
-    padding: 12px 14px;
-    border: 1px solid var(--border);
+    padding: 12px 16px;
     border-radius: var(--radius);
-    background: var(--surface);
+    line-height: 1.6;
   }
-
+  .message.bot .bubble {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+    border-top-left-radius: 4px;
+  }
   .message.user .bubble {
-    color: #ffffff;
-    border-color: var(--primary);
-    background: var(--primary);
+    color: #fff;
+    background: var(--gradient-brand);
+    box-shadow: var(--shadow-elevated);
+    border-top-right-radius: 4px;
   }
 
   .sender {
     margin-bottom: 4px;
+    font-size: 12px;
     font-weight: 700;
   }
-
   .message.user .sender {
-    color: rgba(255, 255, 255, 0.78);
+    color: rgba(255,255,255,0.78);
   }
 
   .text {
@@ -1184,37 +1094,33 @@ export default {
     line-height: 1.7;
     text-wrap: pretty;
   }
+  .text :first-child { margin-top: 0; }
+  .text :last-child { margin-bottom: 0; }
+  .text p { margin: 8px 0; }
+  .text ul, .text ol { margin: 8px 0; padding-left: 22px; }
+  .text li + li { margin-top: 4px; }
+  .text a { color: var(--primary-dark); }
+  .message.user .text a { color: #fff; }
 
-  .text :first-child {
-    margin-top: 0;
+  /* Metrics Row */
+  .metrics-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .metrics-row span {
+    padding: 3px 7px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--muted);
+    background: var(--primary-soft);
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 11px;
+    line-height: 1.4;
   }
 
-  .text :last-child {
-    margin-bottom: 0;
-  }
-
-  .text p {
-    margin: 8px 0;
-  }
-
-  .text ul,
-  .text ol {
-    margin: 8px 0;
-    padding-left: 22px;
-  }
-
-  .text li + li {
-    margin-top: 4px;
-  }
-
-  .text a {
-    color: var(--primary-dark);
-  }
-
-  .message.user .text a {
-    color: #ffffff;
-  }
-
+  /* Sources Box */
   .sources-box {
     display: grid;
     gap: 10px;
@@ -1223,116 +1129,102 @@ export default {
     padding: 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    background: var(--surface-muted);
+    background: var(--gradient-hero);
   }
-
-  .message-metrics {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 10px;
-  }
-
-  .message-metrics span {
-    padding: 3px 7px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    color: var(--muted);
-    background: var(--surface-muted);
-    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-    font-size: 11px;
-    line-height: 1.4;
-  }
-
   .sources-title {
-    color: var(--muted);
     font-size: 13px;
-    font-weight: 800;
+    font-weight: 700;
     line-height: 1.3;
   }
-
+  .sources-title::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-right: 6px;
+    vertical-align: middle;
+  }
   .sources-list {
     display: grid;
     gap: 8px;
     margin: 0;
     padding-left: 20px;
   }
-
   .sources-list li {
     padding-left: 2px;
     color: var(--muted);
   }
-
   .sources-list pre {
     margin: 0;
-    color: #263143;
-    background: #ffffff;
+    color: var(--text);
+    background: transparent;
+    font-size: 13px;
   }
 
+  /* Chat Input */
   .chat-input {
     display: flex;
     gap: 10px;
-    padding: 14px;
+    padding: 16px 20px;
     border-top: 1px solid var(--border);
     background: var(--surface);
   }
-
-  textarea {
+  .chat-input textarea {
     flex: 1;
     min-height: 48px;
     max-height: 140px;
     resize: vertical;
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
     padding: 13px 14px;
     color: var(--text);
     background: var(--surface);
     line-height: 1.45;
     outline: none;
-    transition:
-      border-color 160ms var(--ease),
-      background 160ms var(--ease);
+    transition: border-color 160ms ease, box-shadow 160ms ease;
   }
-
-  textarea::placeholder {
+  .chat-input textarea::placeholder {
     color: #98a2b3;
   }
-
-  textarea:focus {
+  .chat-input textarea:focus {
     border-color: var(--primary);
-    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
   }
 
-  .chat-input button {
-    width: 88px;
+  .send-btn {
+    min-width: 88px;
     min-height: 48px;
-    border: 1px solid var(--primary);
-    border-radius: var(--radius);
-    color: #ffffff;
-    background: var(--primary);
+    padding: 0 16px;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: #fff;
+    background: var(--gradient-brand);
     font-weight: 800;
-    transition:
-      background 160ms var(--ease),
-      border-color 160ms var(--ease);
+    box-shadow: 0 2px 6px rgba(37,99,235,0.25);
+    cursor: pointer;
+    transition: opacity 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+  }
+  .send-btn:hover:not(:disabled) {
+    box-shadow: 0 4px 12px rgba(37,99,235,0.35);
+    transform: translateY(-1px);
+  }
+  .send-btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(37,99,235,0.25);
+  }
+  .send-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 
-  .chat-input button:hover:not(:disabled) {
-    border-color: var(--primary-dark);
-    background: var(--primary-dark);
-  }
-
-  .chat-input button:disabled {
-    border-color: #b7c0ce;
-    background: #b7c0ce;
-  }
-
-
+  /* Typing */
   .typing {
     display: flex;
     gap: 5px;
     padding-top: 8px;
   }
-
   .typing span {
     width: 6px;
     height: 6px;
@@ -1340,150 +1232,67 @@ export default {
     background: var(--muted);
     animation: pulse 1s infinite ease-in-out;
   }
+  .typing span:nth-child(2) { animation-delay: 0.14s; }
+  .typing span:nth-child(3) { animation-delay: 0.28s; }
 
-  .typing span:nth-child(2) {
-    animation-delay: 0.14s;
-  }
-
-  .typing span:nth-child(3) {
-    animation-delay: 0.28s;
-  }
-
+  /* pre/code */
   pre {
     max-width: 100%;
     margin: 10px 0;
     padding: 12px;
     overflow-x: auto;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    color: #263143;
+    border-radius: var(--radius-sm);
+    color: var(--text);
     background: #f3f6fa;
     white-space: pre-wrap;
     word-wrap: break-word;
   }
-
+  .message.user pre {
+    color: #fff;
+    background: rgba(255,255,255,0.15);
+  }
   code {
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     font-size: 0.92em;
   }
 
-  .message.user pre {
-    border-color: rgba(255, 255, 255, 0.28);
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.12);
-  }
-
   @keyframes pulse {
-    0%,
-    80%,
-    100% {
-      opacity: 0.35;
-      transform: translateY(0);
-    }
-
-    40% {
-      opacity: 1;
-      transform: translateY(-3px);
-    }
+    0%, 80%, 100% { opacity: 0.35; transform: translateY(0); }
+    40% { opacity: 1; transform: translateY(-3px); }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      transition-duration: 0.01ms !important;
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-    }
+    *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
   }
-
   @media (max-width: 900px) {
-    #app {
-      padding: 14px;
-    }
-
-    .workspace {
+    .app-shell {
       grid-template-columns: 1fr;
+      grid-template-rows: auto auto;
       height: auto;
-      min-height: calc(100dvh - 28px);
+      min-height: 100vh;
+      padding: 12px;
     }
-
     .sidebar {
-      gap: 14px;
+      order: 2;
+      gap: 12px;
+      overflow: visible;
     }
-
-    .status-panel {
-      grid-template-columns: 1fr 1fr;
-    }
-
-    .monitor-panel {
-      grid-template-columns: minmax(220px, 0.8fr) minmax(280px, 1fr);
-      align-items: start;
-    }
-
-    .monitor-header,
-    .resource-strip,
-    .monitor-error {
-      grid-column: 1 / -1;
-    }
-
-    .status-row {
-      grid-column: 1 / -1;
-    }
-
-    .ingest-panel {
-      grid-template-columns: 1fr;
-    }
-
-    .hint-list {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
     .chat-shell {
-      min-height: 68dvh;
+      order: 1;
+      min-height: 70vh;
+      height: auto;
     }
   }
-
   @media (max-width: 640px) {
-    #app {
-      padding: 10px;
-    }
-
-    .sidebar,
-    .chat-header,
-    .chat-history,
-    .chat-input {
-      padding: 14px;
-    }
-
-    .status-panel,
-    .monitor-panel,
-    .monitor-grid,
-    .resource-strip,
-    .hint-list {
-      grid-template-columns: 1fr;
-    }
-
-    .chat-header {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-
-    .header-actions,
-    .ghost-button {
-      width: 100%;
-    }
-
-    .chat-input {
-      flex-direction: column;
-    }
-
-    .chat-input button {
-      width: 100%;
-    }
-
-    .bubble {
-      max-width: calc(100vw - 88px);
-    }
+    .app-shell { padding: 8px; gap: 8px; }
+    .sidebar { gap: 8px; }
+    .chat-header { padding: 14px; }
+    .chat-history { padding: 14px; }
+    .chat-input { padding: 12px 14px; flex-direction: column; }
+    .send-btn { width: 100%; }
+    .bubble { max-width: calc(100vw - 80px); }
+    .brand-card { padding: 16px; }
+    .card { padding: 14px; }
   }
 </style>

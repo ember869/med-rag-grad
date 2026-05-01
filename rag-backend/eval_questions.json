@@ -1,0 +1,302 @@
+[
+  {
+    "id": "Q001",
+    "question": "What are common causes of dizziness and nausea?",
+    "language": "en",
+    "category": "symptom"
+  },
+  {
+    "id": "Q002",
+    "question": "What are the side effects of metformin?",
+    "language": "en",
+    "category": "drug_side_effect"
+  },
+  {
+    "id": "Q003",
+    "question": "孕期可以随便吃止痛药吗？",
+    "language": "zh",
+    "category": "pregnancy"
+  },
+  {
+    "id": "Q004",
+    "question": "Is it safe to take ibuprofen while breastfeeding?",
+    "language": "en",
+    "category": "pregnancy"
+  },
+  {
+    "id": "Q005",
+    "question": "儿童发烧多少度需要去医院？",
+    "language": "zh",
+    "category": "child_health"
+  },
+  {
+    "id": "Q006",
+    "question": "How is type 2 diabetes diagnosed?",
+    "language": "en",
+    "category": "diagnosis"
+  },
+  {
+    "id": "Q007",
+    "question": "高血压患者应该避免哪些食物？",
+    "language": "zh",
+    "category": "chronic_disease"
+  },
+  {
+    "id": "Q008",
+    "question": "What are the symptoms of vitamin D deficiency?",
+    "language": "en",
+    "category": "symptom"
+  },
+  {
+    "id": "Q009",
+    "question": "Can antibiotics treat viral infections?",
+    "language": "en",
+    "category": "drug_side_effect"
+  },
+  {
+    "id": "Q010",
+    "question": "What is the rarest disease in medical history that has only been documented once in 1923?",
+    "language": "en",
+    "category": "edge_case"
+  },
+  {
+    "id": "Q011",
+    "question": "What are the early warning signs of a heart attack?",
+    "language": "en",
+    "category": "emergency"
+  },
+  {
+    "id": "Q012",
+    "question": "中风的前兆症状有哪些？",
+    "language": "zh",
+    "category": "emergency"
+  },
+  {
+    "id": "Q013",
+    "question": "How long does it take for antidepressants to start working?",
+    "language": "en",
+    "category": "mental_health"
+  },
+  {
+    "id": "Q014",
+    "question": "长期失眠会对身体造成什么影响？",
+    "language": "zh",
+    "category": "mental_health"
+  },
+  {
+    "id": "Q015",
+    "question": "What is the difference between type 1 and type 2 diabetes?",
+    "language": "en",
+    "category": "chronic_disease"
+  },
+  {
+    "id": "Q016",
+    "question": "哮喘患者日常应该注意什么？",
+    "language": "zh",
+    "category": "chronic_disease"
+  },
+  {
+    "id": "Q017",
+    "question": "What are the most common food allergies in adults?",
+    "language": "en",
+    "category": "symptom"
+  },
+  {
+    "id": "Q018",
+    "question": "花粉过敏和感冒的症状有什么区别？",
+    "language": "zh",
+    "category": "symptom"
+  },
+  {
+    "id": "Q019",
+    "question": "What are the risks of taking aspirin daily?",
+    "language": "en",
+    "category": "drug_side_effect"
+  },
+  {
+    "id": "Q020",
+    "question": "长期服用降压药有什么副作用？",
+    "language": "zh",
+    "category": "drug_side_effect"
+  },
+  {
+    "id": "Q021",
+    "question": "What vaccinations are recommended during pregnancy?",
+    "language": "en",
+    "category": "pregnancy"
+  },
+  {
+    "id": "Q022",
+    "question": "怀孕期间可以进行哪些运动？",
+    "language": "zh",
+    "category": "pregnancy"
+  },
+  {
+    "id": "Q023",
+    "question": "At what age should children receive the MMR vaccine?",
+    "language": "en",
+    "category": "child_health"
+  },
+  {
+    "id": "Q024",
+    "question": "小儿手足口病有哪些症状和护理方法？",
+    "language": "zh",
+    "category": "child_health"
+  },
+  {
+    "id": "Q025",
+    "question": "How is tuberculosis diagnosed and treated?",
+    "language": "en",
+    "category": "diagnosis"
+  },
+  {
+    "id": "Q026",
+    "question": "做胃镜检查需要注意什么？",
+    "language": "zh",
+    "category": "diagnosis"
+  },
+  {
+    "id": "Q027",
+    "question": "What are the symptoms of iron deficiency anemia?",
+    "language": "en",
+    "category": "symptom"
+  },
+  {
+    "id": "Q028",
+    "question": "腰间盘突出的典型症状是什么？",
+    "language": "zh",
+    "category": "symptom"
+  },
+  {
+    "id": "Q029",
+    "question": "What is the recovery time for a hip replacement surgery?",
+    "language": "en",
+    "category": "surgery_recovery"
+  },
+  {
+    "id": "Q030",
+    "question": "阑尾炎手术后多久可以恢复正常饮食？",
+    "language": "zh",
+    "category": "surgery_recovery"
+  },
+  {
+    "id": "Q031",
+    "question": "How can I lower my cholesterol without medication?",
+    "language": "en",
+    "category": "preventive_care"
+  },
+  {
+    "id": "Q032",
+    "question": "预防骨质疏松应该从什么时候开始补钙？",
+    "language": "zh",
+    "category": "preventive_care"
+  },
+  {
+    "id": "Q033",
+    "question": "What foods are rich in vitamin B12?",
+    "language": "en",
+    "category": "nutrition"
+  },
+  {
+    "id": "Q034",
+    "question": "糖尿病患者可以吃水果吗？哪些水果适合？",
+    "language": "zh",
+    "category": "nutrition"
+  },
+  {
+    "id": "Q035",
+    "question": "What are the symptoms of Alzheimer's disease in early stages?",
+    "language": "en",
+    "category": "geriatric"
+  },
+  {
+    "id": "Q036",
+    "question": "老年人如何预防跌倒？",
+    "language": "zh",
+    "category": "geriatric"
+  },
+  {
+    "id": "Q037",
+    "question": "Can stress cause high blood pressure?",
+    "language": "en",
+    "category": "mental_health"
+  },
+  {
+    "id": "Q038",
+    "question": "焦虑症和抑郁症的主要区别是什么？",
+    "language": "zh",
+    "category": "mental_health"
+  },
+  {
+    "id": "Q039",
+    "question": "How is Lyme disease transmitted and what are the early signs?",
+    "language": "en",
+    "category": "diagnosis"
+  },
+  {
+    "id": "Q040",
+    "question": "甲状腺功能亢进和减退的症状有何不同？",
+    "language": "zh",
+    "category": "diagnosis"
+  },
+  {
+    "id": "Q041",
+    "question": "What should I do if I suspect a broken bone?",
+    "language": "en",
+    "category": "emergency"
+  },
+  {
+    "id": "Q042",
+    "question": "被狗咬伤后应该如何处理伤口？",
+    "language": "zh",
+    "category": "emergency"
+  },
+  {
+    "id": "Q043",
+    "question": "How often should adults get a full health checkup?",
+    "language": "en",
+    "category": "preventive_care"
+  },
+  {
+    "id": "Q044",
+    "question": "打鼾是病吗？什么情况下需要治疗？",
+    "language": "zh",
+    "category": "symptom"
+  },
+  {
+    "id": "Q045",
+    "question": "What is the optimal daily water intake for an adult?",
+    "language": "en",
+    "category": "nutrition"
+  },
+  {
+    "id": "Q046",
+    "question": "痛风患者哪些食物绝对不能吃？",
+    "language": "zh",
+    "category": "nutrition"
+  },
+  {
+    "id": "Q047",
+    "question": "What are the side effects of long-term prednisone use?",
+    "language": "en",
+    "category": "drug_side_effect"
+  },
+  {
+    "id": "Q048",
+    "question": "How effective is the annual flu vaccine?",
+    "language": "en",
+    "category": "preventive_care"
+  },
+  {
+    "id": "Q049",
+    "question": "What are the stages of chronic kidney disease?",
+    "language": "en",
+    "category": "chronic_disease"
+  },
+  {
+    "id": "Q050",
+    "question": "如果一个人从来没有晒过太阳，会得什么奇怪的病？",
+    "language": "zh",
+    "category": "edge_case"
+  }
+]

@@ -1,0 +1,7 @@
+﻿experiment,configured_top_k,actual_top_k,total_questions,success_count,success_rate,avg_sources_count,avg_retrieval_time_ms,avg_generation_time_ms,avg_response_time_ms,max_response_time_ms,min_response_time_ms
+topk3,3,3,10,10,100.0%,3.00,62.4,2932.0,3499.6,5582.0,1966.2
+topk5,5,5,10,10,100.0%,5.00,59.8,3575.8,4118.6,5585.6,2572.3
+topk10,10,10,10,10,100.0%,10.00,62.8,3792.3,4246.8,7116.8,1903.8
+topk3,3,3,50,50,100.0%,3.00,63.3,2605.8,3455.4,10994.2,1533.8
+topk5,5,5,50,50,100.0%,5.00,60.0,2788.5,3377.4,6615.8,1057.9
+topk10,10,10,50,50,100.0%,10.00,63.0,3090.0,3620.3,6932.6,1366.6
